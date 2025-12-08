@@ -112,11 +112,12 @@ struct MessageView: View {
 
             VStack(alignment: message.user.isCurrentUser ? .trailing : .leading, spacing: 2) {
                 // Show sender name above bubble for incoming messages (like iMessage)
-                if showSenderName && !message.user.isCurrentUser && (positionInUserGroup == .first || positionInUserGroup == .single) {
+                // Don't show for system messages or current user's messages
+                if showSenderName && !message.user.isCurrentUser && message.user.type != .system && (positionInUserGroup == .first || positionInUserGroup == .single) {
                     Text(message.user.name)
                         .font(.caption)
                         .foregroundColor(.secondary)
-                        .padding(.leading, 4)
+                        .padding(.leading, 12)
                 }
 
                 if !isDisplayingMessageMenu, let reply = message.replyMessage?.toMessage() {
