@@ -23,6 +23,7 @@ struct MessageView: View {
     let shouldShowLinkPreview: (URL) -> Bool
     let isDisplayingMessageMenu: Bool
     let showMessageTimeView: Bool
+    let showSenderName: Bool
     let messageLinkPreviewLimit: Int
     var font: UIFont
 
@@ -110,6 +111,14 @@ struct MessageView: View {
             }
 
             VStack(alignment: message.user.isCurrentUser ? .trailing : .leading, spacing: 2) {
+                // Show sender name above bubble for incoming messages (like iMessage)
+                if showSenderName && !message.user.isCurrentUser && (positionInUserGroup == .first || positionInUserGroup == .single) {
+                    Text(message.user.name)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.leading, 4)
+                }
+
                 if !isDisplayingMessageMenu, let reply = message.replyMessage?.toMessage() {
                     replyBubbleView(reply)
                         .opacity(theme.style.replyOpacity)
@@ -466,10 +475,11 @@ extension View {
                         shouldShowLinkPreview: { _ in true },
                         isDisplayingMessageMenu: false,
                         showMessageTimeView: true,
+                        showSenderName: true,
                         messageLinkPreviewLimit: 8,
                         font: UIFontMetrics.default.scaledFont(for: UIFont.systemFont(ofSize: 15))
                     )
-                    
+
                     MessageView(
                         viewModel: ChatViewModel(),
                         message: replyedMessage,
@@ -482,6 +492,7 @@ extension View {
                         shouldShowLinkPreview: { _ in true },
                         isDisplayingMessageMenu: false,
                         showMessageTimeView: true,
+                        showSenderName: true,
                         messageLinkPreviewLimit: 8,
                         font: UIFontMetrics.default.scaledFont(for: UIFont.systemFont(ofSize: 15))
                     )

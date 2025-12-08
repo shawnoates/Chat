@@ -126,6 +126,7 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
     var chatTitle: String?
     var paginationHandler: PaginationHandler?
     var showMessageTimeView = true
+    var showSenderName = false
     var messageLinkPreviewLimit = 8
     var messageFont = UIFontMetrics.default.scaledFont(for: UIFont.systemFont(ofSize: 15))
     var availableInputs: [AvailableInputType] = [.text, .audio, .giphy, .media]
@@ -347,6 +348,7 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
             messageStyler: messageStyler,
             shouldShowLinkPreview: shouldShowLinkPreview,
             showMessageTimeView: showMessageTimeView,
+            showSenderName: showSenderName,
             messageLinkPreviewLimit: messageLinkPreviewLimit,
             messageFont: messageFont,
             sections: sections,
@@ -447,7 +449,7 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
                 avatarSize: avatarSize, tapAvatarClosure: nil, messageStyler: messageStyler,
                 shouldShowLinkPreview: shouldShowLinkPreview,
                 isDisplayingMessageMenu: true, showMessageTimeView: showMessageTimeView,
-                messageLinkPreviewLimit: messageLinkPreviewLimit, messageFont: messageFont
+                showSenderName: showSenderName, messageLinkPreviewLimit: messageLinkPreviewLimit, messageFont: messageFont
             )
             .onTapGesture {
                 hideMessageMenu()
@@ -695,6 +697,13 @@ public extension ChatView {
     func showMessageTimeView(_ isShow: Bool) -> ChatView {
         var view = self
         view.showMessageTimeView = isShow
+        return view
+    }
+
+    /// Shows the sender's name above incoming message bubbles (like iMessage in group chats)
+    public func showSenderName(_ isShow: Bool) -> ChatView {
+        var view = self
+        view.showSenderName = isShow
         return view
     }
 

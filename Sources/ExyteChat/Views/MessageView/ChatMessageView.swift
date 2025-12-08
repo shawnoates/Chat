@@ -23,6 +23,7 @@ struct ChatMessageView<MessageContent: View>: View {
     let shouldShowLinkPreview: (URL) -> Bool
     let isDisplayingMessageMenu: Bool
     let showMessageTimeView: Bool
+    let showSenderName: Bool
     let messageLinkPreviewLimit: Int
     let messageFont: UIFont
 
@@ -51,6 +52,7 @@ struct ChatMessageView<MessageContent: View>: View {
                     shouldShowLinkPreview: shouldShowLinkPreview,
                     isDisplayingMessageMenu: isDisplayingMessageMenu,
                     showMessageTimeView: showMessageTimeView,
+                    showSenderName: showSenderName,
                     messageLinkPreviewLimit: messageLinkPreviewLimit,
                     font: messageFont)
             }
