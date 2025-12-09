@@ -319,10 +319,18 @@ struct UIList<MessageContent: View, InputView: View>: UIViewRepresentable {
             let oldIndex = appliedDeletes.firstIndex(where: { $0.date == date } )
             let newIndex = appliedDeletesSwapsAndEdits.firstIndex(where: { $0.date == date } )
             if oldIndex == nil, let newIndex {
+                // This is a NEW section (exists in new but not old)
                 // operationIndex is not the same as newIndex because appliedDeletesSwapsAndEdits is being changed as we go, but to apply changes to UITableView we should have initial index
                 if let operationIndex = newSections.firstIndex(where: { $0.date == date } ) {
+                    let newSection = appliedDeletesSwapsAndEdits[newIndex]
                     appliedDeletesSwapsAndEdits.remove(at: newIndex)
                     insertOperations.append(.insertSection(operationIndex))
+                    // IMPORTANT: When inserting a new section, we must also insert ALL its rows
+                    // Otherwise UITableView will crash because data source returns more rows
+                    // than we told it we're inserting
+                    for rowIndex in 0..<newSection.rows.count {
+                        insertOperations.append(.insert(operationIndex, rowIndex))
+                    }
                 }
                 continue
             }
@@ -345,6 +353,11 @@ struct UIList<MessageContent: View, InputView: View>: UIViewRepresentable {
             let newRowIDs = newRows.map { $0.id }
             let rowIDsToDelete = oldRowIDs.filter { !newRowIDs.contains($0) }.reversed()
             let rowIDsToInsert = newRowIDs.filter { !oldRowIDs.contains($0) }
+
+            // Get the FINAL section index from newSections (not the working array index)
+            // This is needed because when new sections are inserted, indices shift
+            let finalSectionIndex = newSections.firstIndex(where: { $0.date == date }) ?? newIndex
+
             for rowId in rowIDsToDelete {
                 if let index = oldRows.firstIndex(where: { $0.id == rowId }) {
                     oldRows.remove(at: index)
@@ -354,7 +367,8 @@ struct UIList<MessageContent: View, InputView: View>: UIViewRepresentable {
             for rowId in rowIDsToInsert {
                 if let index = newRows.firstIndex(where: { $0.id == rowId }) {
                     // this row was not in old section, should add it to final result
-                    insertOperations.append(.insert(newIndex, index))
+                    // Use finalSectionIndex to account for section insertions shifting indices
+                    insertOperations.append(.insert(finalSectionIndex, index))
                 }
             }
 
