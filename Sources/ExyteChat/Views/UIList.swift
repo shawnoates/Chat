@@ -196,8 +196,10 @@ struct UIList<MessageContent: View, InputView: View>: UIViewRepresentable {
         if isScrolledToBottom || isScrolledToTop {
             // step 4: inserts
             // apply the rest of the changes to table's dataSource, i.e. inserts
+            // IMPORTANT: Use splitInfo.targetSections (the sections used to compute the split)
+            // instead of self.sections, which may have changed during async execution
             //print("4 apply inserts", runID)
-            updateContextClosure(sections)
+            updateContextClosure(splitInfo.targetSections)
 
             tableView.beginUpdates()
             for operation in splitInfo.insertOperations {
@@ -349,7 +351,7 @@ struct UIList<MessageContent: View, InputView: View>: UIViewRepresentable {
             appliedDeletesSwapsAndEdits[newIndex].rows = newRows
         }
 
-        return SplitInfo(appliedDeletes: appliedDeletes, appliedDeletesSwapsAndEdits: appliedDeletesSwapsAndEdits, deleteOperations: deleteOperations, swapOperations: swapOperations, editOperations: editOperations, insertOperations: insertOperations)
+        return SplitInfo(appliedDeletes: appliedDeletes, appliedDeletesSwapsAndEdits: appliedDeletesSwapsAndEdits, targetSections: newSections, deleteOperations: deleteOperations, swapOperations: swapOperations, editOperations: editOperations, insertOperations: insertOperations)
     }
 
     private nonisolated func swapsContain(swaps: [Operation], section: Int, index: Int) -> Bool {
@@ -645,6 +647,7 @@ extension UIList {
     struct SplitInfo: @unchecked Sendable {
         let appliedDeletes: [MessagesSection]
         let appliedDeletesSwapsAndEdits: [MessagesSection]
+        let targetSections: [MessagesSection] // The new sections used to compute this split
         let deleteOperations: [Operation]
         let swapOperations: [Operation]
         let editOperations: [Operation]
