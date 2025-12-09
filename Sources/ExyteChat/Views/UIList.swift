@@ -105,11 +105,23 @@ struct UIList<MessageContent: View, InputView: View>: UIViewRepresentable {
 
     @MainActor
     private func updateIfNeeded(coordinator: Coordinator, tableView: UITableView) async {
+        print("🔍 [UIList] updateIfNeeded called")
+        print("🔍 [UIList] coordinator.sections: \(coordinator.sections.count) sections")
+        for (i, section) in coordinator.sections.enumerated() {
+            print("🔍 [UIList]   coordinator section[\(i)]: \(section.rows.count) rows, ids: \(section.rows.map { $0.id })")
+        }
+        print("🔍 [UIList] new sections: \(sections.count) sections")
+        for (i, section) in sections.enumerated() {
+            print("🔍 [UIList]   new section[\(i)]: \(section.rows.count) rows, ids: \(section.rows.map { $0.id })")
+        }
+
         if coordinator.sections == sections {
+            print("🔍 [UIList] sections unchanged, returning early")
             return
         }
 
         if coordinator.sections.isEmpty {
+            print("🔍 [UIList] coordinator.sections is empty, doing full reload")
             coordinator.sections = sections
             tableView.reloadData()
             if !isScrollEnabled {
@@ -125,9 +137,10 @@ struct UIList<MessageContent: View, InputView: View>: UIViewRepresentable {
         }
 
         let prevSections = coordinator.sections
-        //print("0 whole sections:", runID, "\n")
-        //print("whole previous:\n", formatSections(prevSections), "\n")
-        let splitInfo = await performSplitInBackground(prevSections, sections)
+        // Capture current sections to pass to split - avoid race condition
+        let currentSections = sections
+        print("🔍 [UIList] computing split between \(prevSections.count) prev sections and \(currentSections.count) new sections")
+        let splitInfo = await performSplitInBackground(prevSections, currentSections)
         await applyUpdatesToTable(tableView, splitInfo: splitInfo) {
             coordinator.sections = $0
         }
@@ -146,44 +159,56 @@ struct UIList<MessageContent: View, InputView: View>: UIViewRepresentable {
     private func applyUpdatesToTable(_ tableView: UITableView, splitInfo: SplitInfo, updateContextClosure: ([MessagesSection])->()) async {
         // step 0: preparation
         // prepare intermediate sections and operations
-        //print("whole appliedDeletes:\n", formatSections(splitInfo.appliedDeletes), "\n")
-        //print("whole appliedDeletesSwapsAndEdits:\n", formatSections(splitInfo.appliedDeletesSwapsAndEdits), "\n")
-        //print("whole final sections:\n", formatSections(sections), "\n")
 
-        //print("operations delete:\n", splitInfo.deleteOperations.map { $0.description })
-        //print("operations swap:\n", splitInfo.swapOperations.map { $0.description })
-        //print("operations edit:\n", splitInfo.editOperations.map { $0.description })
-        //print("operations insert:\n", splitInfo.insertOperations.map { $0.description })
+        // DEBUG: Log section row counts
+        print("🔍 [UIList] applyUpdatesToTable START")
+        print("🔍 [UIList] targetSections: \(splitInfo.targetSections.count) sections")
+        for (i, section) in splitInfo.targetSections.enumerated() {
+            print("🔍 [UIList]   section[\(i)]: \(section.rows.count) rows")
+        }
+        print("🔍 [UIList] appliedDeletes: \(splitInfo.appliedDeletes.count) sections")
+        for (i, section) in splitInfo.appliedDeletes.enumerated() {
+            print("🔍 [UIList]   section[\(i)]: \(section.rows.count) rows")
+        }
+        print("🔍 [UIList] appliedDeletesSwapsAndEdits: \(splitInfo.appliedDeletesSwapsAndEdits.count) sections")
+        for (i, section) in splitInfo.appliedDeletesSwapsAndEdits.enumerated() {
+            print("🔍 [UIList]   section[\(i)]: \(section.rows.count) rows")
+        }
+        print("🔍 [UIList] deleteOps: \(splitInfo.deleteOperations.map { $0.description })")
+        print("🔍 [UIList] swapOps: \(splitInfo.swapOperations.map { $0.description })")
+        print("🔍 [UIList] editOps: \(splitInfo.editOperations.map { $0.description })")
+        print("🔍 [UIList] insertOps: \(splitInfo.insertOperations.map { $0.description })")
+        print("🔍 [UIList] isScrolledToBottom: \(isScrolledToBottom), isScrolledToTop: \(isScrolledToTop)")
 
         await performBatchTableUpdates(tableView) {
             // step 1: deletes
             // delete sections and rows if necessary
-            //print("1 apply deletes", runID)
+            print("🔍 [UIList] Step 1: applying deletes")
             updateContextClosure(splitInfo.appliedDeletes)
             //context.coordinator.sections = appliedDeletes
             for operation in splitInfo.deleteOperations {
                 applyOperation(operation, tableView: tableView)
             }
         }
-        //print("1 finished deletes", runID)
+        print("🔍 [UIList] Step 1: finished deletes")
 
         await performBatchTableUpdates(tableView) {
             // step 2: swaps
             // swap places for rows that moved inside the table
             // (example of how this happens. send two messages: first m1, then m2. if m2 is delivered to server faster, then it should jump above m1 even though it was sent later)
-            //print("2 apply swaps", runID)
+            print("🔍 [UIList] Step 2: applying swaps")
             updateContextClosure(splitInfo.appliedDeletesSwapsAndEdits) // NOTE: this array already contains necessary edits, but won't be a problem for appplying swaps
             for operation in splitInfo.swapOperations {
                 applyOperation(operation, tableView: tableView)
             }
         }
-        //print("2 finished swaps", runID)
+        print("🔍 [UIList] Step 2: finished swaps")
 
         UIView.setAnimationsEnabled(false)
         await performBatchTableUpdates(tableView) {
             // step 3: edits
             // check only sections that are already in the table for existing rows that changed and apply only them to table's dataSource without animation
-            //print("3 apply edits", runID)
+            print("🔍 [UIList] Step 3: applying edits")
             updateContextClosure(splitInfo.appliedDeletesSwapsAndEdits)
 
             for operation in splitInfo.editOperations {
@@ -191,27 +216,39 @@ struct UIList<MessageContent: View, InputView: View>: UIViewRepresentable {
             }
         }
         UIView.setAnimationsEnabled(true)
-        //print("3 finished edits", runID)
+        print("🔍 [UIList] Step 3: finished edits")
 
         if isScrolledToBottom || isScrolledToTop {
             // step 4: inserts
             // apply the rest of the changes to table's dataSource, i.e. inserts
             // IMPORTANT: Use splitInfo.targetSections (the sections used to compute the split)
             // instead of self.sections, which may have changed during async execution
-            //print("4 apply inserts", runID)
+            print("🔍 [UIList] Step 4: applying inserts (scroll condition met)")
             updateContextClosure(splitInfo.targetSections)
 
             tableView.beginUpdates()
             for operation in splitInfo.insertOperations {
+                print("🔍 [UIList]   applying insert: \(operation.description)")
                 applyOperation(operation, tableView: tableView)
             }
             tableView.endUpdates()
-            //print("4 finished inserts", runID)
+            print("🔍 [UIList] Step 4: finished inserts")
 
             if !isScrollEnabled {
                 tableContentHeight = tableView.contentSize.height
             }
+        } else {
+            print("🔍 [UIList] Step 4: SKIPPED (isScrolledToBottom=\(isScrolledToBottom), isScrolledToTop=\(isScrolledToTop))")
+            // BUG FIX: Even if we skip animated inserts, we need to update the coordinator
+            // with the target sections and reload the table, otherwise the data source
+            // will be out of sync with what was set in steps 1-3
+            if !splitInfo.insertOperations.isEmpty {
+                print("🔍 [UIList] WARNING: Skipping \(splitInfo.insertOperations.count) insert operations but will reload instead")
+                updateContextClosure(splitInfo.targetSections)
+                tableView.reloadData()
+            }
         }
+        print("🔍 [UIList] applyUpdatesToTable END")
     }
 
     // MARK: - Operations
