@@ -293,7 +293,8 @@ struct UIList<MessageContent: View, InputView: View>: UIViewRepresentable {
         case .insert(let section, let row):
             tableView.insertRows(at: [IndexPath(row: row, section: section)], with: animation)
         case .edit(let section, let row):
-            tableView.reconfigureRows(at: [IndexPath(row: row, section: section)])
+            // Use reloadRows instead of reconfigureRows to ensure SwiftUI hosted cells fully refresh
+            tableView.reloadRows(at: [IndexPath(row: row, section: section)], with: .none)
         case .swap(let section, let rowFrom, let rowTo):
             tableView.deleteRows(at: [IndexPath(row: rowFrom, section: section)], with: animation)
             tableView.insertRows(at: [IndexPath(row: rowTo, section: section)], with: animation)
