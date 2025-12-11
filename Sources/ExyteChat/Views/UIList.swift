@@ -204,7 +204,7 @@ struct UIList<MessageContent: View, InputView: View>: UIViewRepresentable {
         }
         print("🔍 [UIList] Step 2: finished swaps")
 
-        UIView.setAnimationsEnabled(false)
+        await MainActor.run { UIView.setAnimationsEnabled(false) }
         await performBatchTableUpdates(tableView) {
             // step 3: edits
             // check only sections that are already in the table for existing rows that changed and apply only them to table's dataSource without animation
@@ -215,7 +215,7 @@ struct UIList<MessageContent: View, InputView: View>: UIViewRepresentable {
                 applyOperation(operation, tableView: tableView)
             }
         }
-        UIView.setAnimationsEnabled(true)
+        await MainActor.run { UIView.setAnimationsEnabled(true) }
         print("🔍 [UIList] Step 3: finished edits")
 
         if isScrolledToBottom || isScrolledToTop {
