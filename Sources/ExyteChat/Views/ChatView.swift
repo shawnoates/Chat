@@ -572,7 +572,7 @@ public extension ChatView {
     /// Sets an optional custom message view builder.
     /// Return AnyView to use a custom view for that message, or nil to use the default MessageView.
     /// This is useful when you only need to customize certain message types (e.g., polls).
-    func optionalMessageBuilder(_ builder: @escaping (Message) -> AnyView?) -> ChatView {
+    func optionalMessageBuilder(_ builder: @escaping (Message) -> AnyView?) -> ChatView<MessageContent, InputViewContent, MenuAction> {
         var view = self
         view.optionalMessageBuilder = builder
         return view
