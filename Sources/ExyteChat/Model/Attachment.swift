@@ -8,11 +8,14 @@ import ExyteMediaPicker
 public enum AttachmentType: String, Codable, Sendable {
     case image
     case video
+    case gif
 
     public var title: String {
         switch self {
         case .image:
             return "Image"
+        case .gif:
+            return "GIF"
         default:
             return "Video"
         }
@@ -25,6 +28,17 @@ public enum AttachmentType: String, Codable, Sendable {
         default:
             self = .video
         }
+    }
+
+    /// Check if a URL points to a GIF
+    public static func from(url: URL) -> AttachmentType {
+        let urlString = url.absoluteString.lowercased()
+        if urlString.hasSuffix(".gif") ||
+           urlString.contains("giphy.com") ||
+           urlString.contains("tenor.com") {
+            return .gif
+        }
+        return .image
     }
 }
 

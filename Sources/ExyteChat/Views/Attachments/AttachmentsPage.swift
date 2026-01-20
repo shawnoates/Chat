@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct AttachmentsPage: View {
 
@@ -12,7 +13,10 @@ struct AttachmentsPage: View {
     let attachment: Attachment
 
     var body: some View {
-        if attachment.type == .image {
+        if attachment.type == .gif {
+            AnimatedGifView(url: attachment.full, size: CGSize(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height * 0.7))
+                .aspectRatio(contentMode: .fit)
+        } else if attachment.type == .image {
             CachedAsyncImage(
                 url: attachment.full,
                 cacheKey: attachment.fullCacheKey

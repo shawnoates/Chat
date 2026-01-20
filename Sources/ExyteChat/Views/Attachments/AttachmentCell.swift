@@ -25,7 +25,27 @@ public struct AttachmentCell: View {
 
     public var body: some View {
         Group {
-            if attachment.type == .image {
+            if attachment.type == .gif {
+                ZStack {
+                    AnimatedGifAttachmentView(attachment: attachment, size: size)
+                    if let status = attachment.fullUploadStatus {
+                        switch status {
+                        case .inProgress(.none):
+                            uploadingOverlay(percent: nil)
+                        case .inProgress(let percent?):
+                            uploadingOverlay(percent: percent)
+                        case .complete:
+                            EmptyView()
+                        case .cancelled:
+                            cancelledOverlay
+                        case .error:
+                            errorOverlay
+                        }
+                    } else {
+                        EmptyView()
+                    }
+                }
+            } else if attachment.type == .image {
                 ZStack {
                     content
                     if let status = attachment.fullUploadStatus {
