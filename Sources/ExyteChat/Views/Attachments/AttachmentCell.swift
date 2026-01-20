@@ -27,7 +27,7 @@ public struct AttachmentCell: View {
         Group {
             if attachment.type == .gif {
                 ZStack {
-                    AnimatedGifAttachmentView(attachment: attachment, size: size)
+                    AnimatedGifAttachmentView(url: attachment.full, size: size)
                     if let status = attachment.fullUploadStatus {
                         switch status {
                         case .inProgress(.none):
