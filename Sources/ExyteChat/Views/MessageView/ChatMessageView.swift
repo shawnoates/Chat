@@ -15,6 +15,9 @@ struct ChatMessageView<MessageContent: View>: View {
 
     var messageBuilder: MessageBuilderClosure?
 
+    /// Optional builder that returns AnyView? - when it returns a view, use that; when nil, use default
+    var optionalMessageBuilder: ((Message) -> AnyView?)?
+
     let row: MessageRow
     let chatType: ChatType
     let avatarSize: CGFloat
@@ -29,7 +32,11 @@ struct ChatMessageView<MessageContent: View>: View {
 
     var body: some View {
         Group {
-            if let messageBuilder = messageBuilder {
+            // First, check if optionalMessageBuilder returns a view for this message
+            if let optionalBuilder = optionalMessageBuilder,
+               let customView = optionalBuilder(row.message) {
+                customView
+            } else if let messageBuilder = messageBuilder {
                 messageBuilder(
                     row.message,
                     row.positionInUserGroup,

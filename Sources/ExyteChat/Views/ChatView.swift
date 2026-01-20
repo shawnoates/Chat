@@ -89,7 +89,13 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
     
     /// provide custom message view builder
     var messageBuilder: MessageBuilderClosure? = nil
-    
+
+    /// Optional custom message view builder that can return nil for default rendering.
+    /// When this returns AnyView, it will be used for that message.
+    /// When this returns nil, the default MessageView (or messageBuilder if set) will be used.
+    /// Takes message and returns AnyView? - simpler signature for basic customization.
+    var optionalMessageBuilder: ((Message) -> AnyView?)? = nil
+
     /// provide custom input view builder
     var inputViewBuilder: InputViewBuilderClosure? = nil
     
@@ -335,6 +341,7 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
             shouldScrollToTop: $shouldScrollToTop,
             tableContentHeight: $tableContentHeight,
             messageBuilder: messageBuilder,
+            optionalMessageBuilder: optionalMessageBuilder,
             mainHeaderBuilder: mainHeaderBuilder,
             headerBuilder: headerBuilder,
             inputView: inputView,
@@ -445,7 +452,8 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
             )
         ) {
             ChatMessageView(
-                viewModel: viewModel, messageBuilder: messageBuilder, row: row, chatType: type,
+                viewModel: viewModel, messageBuilder: messageBuilder, optionalMessageBuilder: optionalMessageBuilder,
+                row: row, chatType: type,
                 avatarSize: avatarSize, tapAvatarClosure: nil, messageStyler: messageStyler,
                 shouldShowLinkPreview: shouldShowLinkPreview,
                 isDisplayingMessageMenu: true, showMessageTimeView: showMessageTimeView,
@@ -560,7 +568,16 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
 }
 
 public extension ChatView {
-    
+
+    /// Sets an optional custom message view builder.
+    /// Return AnyView to use a custom view for that message, or nil to use the default MessageView.
+    /// This is useful when you only need to customize certain message types (e.g., polls).
+    func optionalMessageBuilder(_ builder: @escaping (Message) -> AnyView?) -> ChatView {
+        var view = self
+        view.optionalMessageBuilder = builder
+        return view
+    }
+
     func betweenListAndInputViewBuilder<V: View>(_ builder: @escaping ()->V) -> ChatView {
         var view = self
         view.betweenListAndInputViewBuilder = {
