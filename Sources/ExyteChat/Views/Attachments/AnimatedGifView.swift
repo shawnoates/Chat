@@ -208,28 +208,18 @@ struct AnimatedGifAttachmentView: View {
                 ZStack {
                     Rectangle()
                         .foregroundColor(theme.colors.inputBG)
-                    ActivityIndicator(size: 30, showBackground: false)
+                    ProgressView()
                 }
                 .frame(width: size.width, height: size.height)
             } else {
-                // Fallback - show static thumbnail
-                CachedAsyncImage(
-                    url: attachment.thumbnail,
-                    cacheKey: attachment.thumbnailCacheKey
-                ) { imageView in
-                    imageView
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: size.width, height: size.height)
-                        .clipped()
-                } placeholder: {
-                    ZStack {
-                        Rectangle()
-                            .foregroundColor(theme.colors.inputBG)
-                        ActivityIndicator(size: 30, showBackground: false)
-                    }
-                    .frame(width: size.width, height: size.height)
+                // Fallback - show placeholder
+                ZStack {
+                    Rectangle()
+                        .foregroundColor(theme.colors.inputBG)
+                    Image(systemName: "photo")
+                        .foregroundColor(.gray)
                 }
+                .frame(width: size.width, height: size.height)
             }
         }
         .onAppear {
