@@ -14,7 +14,7 @@ struct AttachmentsPage: View {
 
     var body: some View {
         if attachment.type == .gif {
-            AnimatedGifView(url: attachment.full, size: CGSize(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height * 0.7))
+            ChatAnimatedGifView(url: attachment.full, size: CGSize(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height * 0.7))
                 .aspectRatio(contentMode: .fit)
         } else if attachment.type == .image {
             CachedAsyncImage(

@@ -10,23 +10,23 @@ import UIKit
 import ImageIO
 
 /// A SwiftUI view that displays animated GIFs using native iOS frameworks
-public struct GifViewRepresentable: UIViewRepresentable {
+struct ChatGifViewRepresentable: UIViewRepresentable {
     let gifData: Data
     let contentMode: UIView.ContentMode
 
-    public init(gifData: Data, contentMode: UIView.ContentMode = .scaleAspectFit) {
+    init(gifData: Data, contentMode: UIView.ContentMode = .scaleAspectFit) {
         self.gifData = gifData
         self.contentMode = contentMode
     }
 
-    public func makeUIView(context: Context) -> UIImageView {
+    func makeUIView(context: Context) -> UIImageView {
         let imageView = UIImageView()
         imageView.contentMode = contentMode
         imageView.clipsToBounds = true
         return imageView
     }
 
-    public func updateUIView(_ uiView: UIImageView, context: Context) {
+    func updateUIView(_ uiView: UIImageView, context: Context) {
         // Create animated image from GIF data
         if let animatedImage = createAnimatedImage(from: gifData) {
             uiView.image = animatedImage
@@ -84,7 +84,7 @@ public struct GifViewRepresentable: UIViewRepresentable {
 }
 
 /// A SwiftUI view that loads and displays an animated GIF from a URL with caching
-public struct AnimatedGifView: View {
+public struct ChatAnimatedGifView: View {
     let url: URL
     let size: CGSize
 
@@ -100,7 +100,7 @@ public struct AnimatedGifView: View {
     public var body: some View {
         Group {
             if let gifData = gifData {
-                GifViewRepresentable(gifData: gifData, contentMode: .scaleAspectFill)
+                ChatGifViewRepresentable(gifData: gifData, contentMode: .scaleAspectFill)
                     .frame(width: size.width, height: size.height)
                     .clipped()
             } else if isLoading {
@@ -130,7 +130,7 @@ public struct AnimatedGifView: View {
 
     private func loadGifData() {
         // Check cache first
-        if let cachedData = GifCache.shared.get(for: url) {
+        if let cachedData = ChatGifCache.shared.get(for: url) {
             self.gifData = cachedData
             self.isLoading = false
             return
@@ -146,7 +146,7 @@ public struct AnimatedGifView: View {
                 }
 
                 // Cache the data
-                GifCache.shared.set(data, for: url)
+                ChatGifCache.shared.set(data, for: url)
 
                 await MainActor.run {
                     self.gifData = data
@@ -164,8 +164,8 @@ public struct AnimatedGifView: View {
 }
 
 /// Simple in-memory cache for GIF data
-final class GifCache {
-    static let shared = GifCache()
+final class ChatGifCache {
+    static let shared = ChatGifCache()
 
     private var cache = NSCache<NSURL, NSData>()
 
@@ -184,7 +184,7 @@ final class GifCache {
 }
 
 /// Attachment view specifically for GIF attachments in the chat
-public struct AnimatedGifAttachmentView: View {
+struct AnimatedGifAttachmentView: View {
     @Environment(\.chatTheme) var theme
 
     let attachment: Attachment
@@ -193,15 +193,15 @@ public struct AnimatedGifAttachmentView: View {
     @State private var gifData: Data?
     @State private var isLoading = true
 
-    public init(attachment: Attachment, size: CGSize) {
+    init(attachment: Attachment, size: CGSize) {
         self.attachment = attachment
         self.size = size
     }
 
-    public var body: some View {
+    var body: some View {
         Group {
             if let gifData = gifData {
-                GifViewRepresentable(gifData: gifData, contentMode: .scaleAspectFill)
+                ChatGifViewRepresentable(gifData: gifData, contentMode: .scaleAspectFill)
                     .frame(width: size.width, height: size.height)
                     .clipped()
             } else if isLoading {
@@ -212,7 +212,7 @@ public struct AnimatedGifAttachmentView: View {
                 }
                 .frame(width: size.width, height: size.height)
             } else {
-                // Fallback
+                // Fallback - show static thumbnail
                 CachedAsyncImage(
                     url: attachment.thumbnail,
                     cacheKey: attachment.thumbnailCacheKey
@@ -241,7 +241,7 @@ public struct AnimatedGifAttachmentView: View {
         let url = attachment.full
 
         // Check cache first
-        if let cachedData = GifCache.shared.get(for: url) {
+        if let cachedData = ChatGifCache.shared.get(for: url) {
             self.gifData = cachedData
             self.isLoading = false
             return
@@ -257,7 +257,7 @@ public struct AnimatedGifAttachmentView: View {
                 }
 
                 // Cache the data
-                GifCache.shared.set(data, for: url)
+                ChatGifCache.shared.set(data, for: url)
 
                 await MainActor.run {
                     self.gifData = data
