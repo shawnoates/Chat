@@ -187,14 +187,14 @@ final class ChatGifCache {
 struct AnimatedGifAttachmentView: View {
     @Environment(\.chatTheme) var theme
 
-    let attachment: Attachment
+    let url: URL
     let size: CGSize
 
     @State private var gifData: Data?
     @State private var isLoading = true
 
-    init(attachment: Attachment, size: CGSize) {
-        self.attachment = attachment
+    init(url: URL, size: CGSize) {
+        self.url = url
         self.size = size
     }
 
@@ -228,8 +228,6 @@ struct AnimatedGifAttachmentView: View {
     }
 
     private func loadGifData() {
-        let url = attachment.full
-
         // Check cache first
         if let cachedData = ChatGifCache.shared.get(for: url) {
             self.gifData = cachedData
